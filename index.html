@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>PT. Lumensia Smart Technologie</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 50px;
+      background: #f4f4f4;
+    }
+    h1 {
+      color: #6A0DAD;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #6A0DAD;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Selamat Datang di PT. Lumensia Smart Technologie</h1>
+  <p>Kami menghadirkan layanan smart home, konstruksi digital, dan sistem pembayaran berbasis Pi Network.</p>
+
+  <button onclick="bayarDenganPi()">Bayar 0.1π Sekarang</button>
+
+  <script>
+    async function bayarDenganPi() {
+      const paymentData = {
+        amount: 0.1,
+        memo: "Pembayaran awal konstruksi Lumensia",
+        metadata: { idPesanan: "LMS123456" }
+      };
+
+      try {
+        const payment = await window.Pi.openPayment(paymentData, {
+          onReadyForServerApproval: function (paymentId) {
+            console.log("Siap untuk disetujui server:", paymentId);
+          },
+          onReadyForServerCompletion: function (paymentId, txid) {
+            console.log("Transaksi siap diselesaikan:", paymentId, txid);
+          },
+          onCancel: function (paymentId) {
+            console.log("Dibatalkan:", paymentId);
+          },
+          onError: function (error, payment) {
+            console.error("Terjadi kesalahan:", error);
+          }
+        });
+      } catch (err) {
+        console.error("Gagal memulai pembayaran:", err);
+      }
+    }
+  </script>
+</body>
+</html>
