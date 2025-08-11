@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <title>PT. Lumensia Smart Technologie</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- ====================================================== -->
+  <!-- ==> TAMBAHKAN DUA BARIS SKRIP PI SDK DI SINI <== -->
+  <script src="https://sdk.pi.app/v2/pi-sdk.js"></script>
+  <script>Pi.init({ version: "2.0", sandbox: true } )</script>
+  <!-- ====================================================== -->
+
   <style>
     body {
       font-family: sans-serif;
@@ -42,41 +49,55 @@
   <p>Kami menghadirkan layanan Smart Home dan Konstruksi Digital berbasis Pi Network.</p>
 
   <div class="notice">
-    <strong>Perhatian:</strong><br>
-    Transaksi Pi akan dibuka setelah sistem berbasis <strong>GCV komunitas (1π = $314.159)</strong> siap<br>
+    <strong>Perhatian:</strong>  
+
+    Transaksi Pi akan dibuka setelah sistem berbasis <strong>GCV komunitas (1π = $314.159)</strong> siap  
+
     dan jaringan <strong>Open Mainnet</strong> resmi aktif.
   </div>
 
-  <button onclick="alertGCV()">Bayar (Akan Tersedia Setelah Open Mainnet)</button>
+  <!-- Ganti tombol ini agar memanggil fungsi pembayaran Pi -->
+  <button onclick="bayarDenganPi()">Lakukan Pembayaran Uji Coba</button>
 
   <script>
     function alertGCV() {
       alert("Transaksi Pi akan dibuka setelah sistem GCV komunitas (1π = $314.159) siap dan open mainnet aktif.");
     }
 
+    // Fungsi ini yang akan kita gunakan untuk menyelesaikan checklist
     async function bayarDenganPi() {
-      const paymentData = {
-        amount: 1.0,
-        memo: "Pembayaran awal konstruksi Lumensia",
-        metadata: { idPesanan: "LMS123456" }
-      };
+      try {
+        // 1. Otentikasi pengguna
+        const scopes = ['payments'];
+        await Pi.authenticate(scopes);
 
-      const callbacks = {
-        onReadyForServerApproval: (paymentId) => {
-          console.log("Approve ID:", paymentId);
-        },
-        onReadyForServerCompletion: (paymentId, txid) => {
-          console.log("Transaksi selesai:", txid);
-        },
-        onCancel: () => {
-          alert("Transaksi dibatalkan oleh pengguna.");
-        },
-        onError: (error) => {
-          alert("Terjadi kesalahan: " + error);
-        }
-      };
+        // 2. Siapkan data pembayaran untuk uji coba
+        const paymentData = {
+          amount: 0.001, // Gunakan jumlah kecil untuk tes
+          memo: "Pembayaran uji coba untuk Lumensia",
+          metadata: { testOrderId: "LMS-TEST-001" }
+        };
 
-      // window.Pi.openPayment(paymentData, callbacks); // ← Aktifkan saat siap
+        // 3. Buat permintaan pembayaran
+        await Pi.createPayment(paymentData, {
+          onReadyForServerApproval: (paymentId) => {
+            console.log("onReadyForServerApproval:", paymentId);
+            // Di aplikasi nyata, Anda akan mengirim paymentId ini ke server Anda
+          },
+          onReadyForServerCompletion: (paymentId, txid) => {
+            console.log("onReadyForServerCompletion:", paymentId, txid);
+            // Di aplikasi nyata, Anda akan mengirim txid ini ke server Anda
+          },
+          onCancel: (paymentId) => {
+            alert("Pembayaran dibatalkan.");
+          },
+          onError: (error, payment) => {
+            alert("Terjadi kesalahan: " + error.message);
+          }
+        });
+      } catch (err) {
+        alert("Gagal memulai proses: " + err.message);
+      }
     }
   </script>
 
