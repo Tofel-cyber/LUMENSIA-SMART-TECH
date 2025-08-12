@@ -2,15 +2,13 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>PT. Lumensia Smart Technologie</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <!-- ====================================================== -->
-  <!-- ==> TAMBAHKAN DUA BARIS SKRIP PI SDK DI SINI <== -->
-  <script src="https://sdk.pi.app/v2/pi-sdk.js"></script>
-  <script>Pi.init({ version: "2.0", sandbox: true } )</script>
-  <!-- ====================================================== -->
-
+  <title>PT. Lumensia Smart Technologies</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <script>
+    // Inisialisasi SDK Pi dalam mode Production
+    Pi.init({ version: "2.0" });
+  </script>
   <style>
     body {
       font-family: sans-serif;
@@ -18,9 +16,7 @@
       padding: 50px;
       background: #f4f4f4;
     }
-    h1 {
-      color: #6A0DAD;
-    }
+    h1 { color: #6A0DAD; }
     .notice {
       background-color: #fff3cd;
       color: #856404;
@@ -45,64 +41,68 @@
   </style>
 </head>
 <body>
-  <h1>PT. Lumensia Smart Technologie</h1>
+
+  <h1>PT. Lumensia Smart Technologies</h1>
   <p>Kami menghadirkan layanan Smart Home dan Konstruksi Digital berbasis Pi Network.</p>
 
   <div class="notice">
     <strong>Perhatian:</strong>  
-
-    Transaksi Pi akan dibuka setelah sistem berbasis <strong>GCV komunitas (1π = $314.159)</strong> siap  
-
-    dan jaringan <strong>Open Mainnet</strong> resmi aktif.
+    Ini adalah transaksi uji coba untuk menyelesaikan checklist tahap 11 Pi Developer.
   </div>
 
-  <!-- Ganti tombol ini agar memanggil fungsi pembayaran Pi -->
-  <button onclick="bayarDenganPi()">Lakukan Pembayaran Uji Coba</button>
+  <button onclick="bayarDenganPi()">💰 Lakukan Pembayaran Uji Coba</button>
 
   <script>
-    function alertGCV() {
-      alert("Transaksi Pi akan dibuka setelah sistem GCV komunitas (1π = $314.159) siap dan open mainnet aktif.");
-    }
-
-    // Fungsi ini yang akan kita gunakan untuk menyelesaikan checklist
     async function bayarDenganPi() {
       try {
-        // 1. Otentikasi pengguna
+        // 1. Otorisasi pengguna
         const scopes = ['payments'];
-        await Pi.authenticate(scopes);
+        const authResult = await Pi.authenticate(scopes, onIncompletePaymentFound);
 
-        // 2. Siapkan data pembayaran untuk uji coba
+        // 2. Siapkan data pembayaran (gunakan jumlah kecil untuk uji coba)
         const paymentData = {
-          amount: 0.001, // Gunakan jumlah kecil untuk tes
-          memo: "Pembayaran uji coba untuk Lumensia",
-          metadata: { testOrderId: "LMS-TEST-001" }
+          amount: 0.001, // jumlah Pi untuk test
+          memo: "Pembayaran uji coba Lumensia", 
+          metadata: { test: true }
         };
 
-        // 3. Buat permintaan pembayaran
-        await Pi.createPayment(paymentData, {
-          onReadyForServerApproval: (paymentId) => {
-            console.log("onReadyForServerApproval:", paymentId);
-            // Di aplikasi nyata, Anda akan mengirim paymentId ini ke server Anda
+        // 3. Buat pembayaran
+        Pi.createPayment(paymentData, {
+          onReadyForServerApproval: async (paymentId) => {
+            await fetch("/approve_payment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ paymentId })
+            });
           },
-          onReadyForServerCompletion: (paymentId, txid) => {
-            console.log("onReadyForServerCompletion:", paymentId, txid);
-            // Di aplikasi nyata, Anda akan mengirim txid ini ke server Anda
+          onReadyForServerCompletion: async (paymentId, txid) => {
+            await fetch("/complete_payment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ paymentId, txid })
+            });
+            alert("✅ Pembayaran berhasil!");
           },
           onCancel: (paymentId) => {
-            alert("Pembayaran dibatalkan.");
+            alert("❌ Pembayaran dibatalkan.");
           },
           onError: (error, payment) => {
-            alert("Terjadi kesalahan: " + error.message);
+            console.error("Terjadi error:", error);
+            alert("⚠️ Terjadi error, cek konsol.");
           }
         });
+
       } catch (err) {
-        alert("Gagal memulai proses: " + err.message);
+        console.error(err);
+        alert("⚠️ Gagal memulai pembayaran");
       }
+    }
+
+    function onIncompletePaymentFound(payment) {
+      console.log("Pembayaran belum selesai:", payment);
     }
   </script>
 
-  <p style="margin-top: 40px; color: gray;">
-    Versi Showcase • Transaksi akan dibuka saat Open Mainnet aktif
-  </p>
 </body>
 </html>
+
