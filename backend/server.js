@@ -2,50 +2,44 @@
 
 // ===== File: server.js (Versi Perbaikan) =====
 
-require('dotenv').config();
+// ===== File: backend/server.js (Versi Baru untuk Vercel) =====
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-// ===== MIDDLEWARE =====
-// PENTING: Middleware ini harus didefinisikan SEBELUM routes
+// Middleware
 app.use(cors());
-app.use(express.json()); // <-- Baris ini sangat penting untuk membaca body JSON
+app.use(express.json());
 
-// ===== KONEKSI DATABASE =====
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Berhasil terhubung ke MongoDB'))
-  .catch((err) => console.error('Gagal terhubung ke MongoDB:', err));
+// Koneksi ke MongoDB
+const mongoUri = process.env.MONGO_URI;
+mongoose.connect(mongoUri)
+  .then(() => console.log("Berhasil terhubung ke MongoDB"))
+  .catch(err => console.error("Gagal terhubung ke MongoDB:", err));
 
-// ===== SCHEMA & MODEL =====
+// Schema dan Model Produk (Sama seperti sebelumnya)
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String, required: true },
   price: { type: Number, required: true },
-  category: { 
-    type: String, 
-    required: true, 
-    enum: ['Properti Smart Home', 'Panel Smart Home', 'Jasa Instalasi']
-  },
-  imageUrl: String,
+  category: { type: String, required: true },
+  imageUrl: { type: String },
   stock: { type: Number, default: 1 },
-  tags: [String],
-  createdAt: { type: Date, default: Date.now }
-});
+  tags: [String]
+}, { timestamps: true });
 
 const Product = mongoose.model('Product', productSchema);
 
-// ===== ROUTES (URL ENDPOINTS) =====
-
-// Endpoint dasar untuk testing
+// --- ROUTES ---
+// Rute utama untuk verifikasi
 app.get('/', (req, res) => {
   res.send('Selamat datang di Backend API Lumensia! Server sudah berjalan dan terhubung ke DB.');
 });
 
-// Endpoint untuk melihat SEMUA produk
+// Rute untuk mendapatkan semua produk
 app.get('/api/products', async (req, res) => {
   try {
     const products = await Product.find();
@@ -55,29 +49,16 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-// Endpoint untuk MENAMBAH PRODUK BARU
+// Rute untuk menambah produk baru
 app.post('/api/products', async (req, res) => {
   try {
-    const newProduct = new Product({
-      name: req.body.name,
-      description: req.body.description,
-      price: req.body.price,
-      category: req.body.category,
-      imageUrl: req.body.imageUrl,
-      stock: req.body.stock,
-      tags: req.body.tags
-    });
-
+    const newProduct = new Product(req.body);
     const savedProduct = await newProduct.save();
     res.status(201).json(savedProduct);
-
   } catch (error) {
-    res.status(400).json({ message: 'Gagal menyimpan produk baru', error: error.message });
+    res.status(400).json({ message: 'Gagal menyimpan produk', error: error.message });
   }
 });
 
-// ===== JALANKAN SERVER =====
-app.listen(PORT, () => {
-  console.log(`Server berjalan di http://localhost:${PORT}` );
-});
-
+// --- PENTING: Ekspor aplikasi untuk Vercel ---
+module.exports = app;
