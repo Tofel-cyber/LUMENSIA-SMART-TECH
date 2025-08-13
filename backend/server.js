@@ -1,64 +1,61 @@
 // ===== File: server.js =====
 
-// ===== File: server.js (Versi Perbaikan) =====
+// ===== File: backend/server.js (Versi Lengkap dan Diperbaiki) =====
 
-// ===== File: backend/server.js (Versi Baru untuk Vercel) =====
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path'); // Diperlukan untuk mengelola path file
 require('dotenv').config();
 
 const app = express();
 
-// Middleware
+// --- Middleware ---
+// Mengizinkan permintaan dari domain lain (penting untuk pengembangan)
 app.use(cors());
+// Mem-parsing body permintaan JSON
 app.use(express.json());
 
-// Koneksi ke MongoDB
+// --- Menyajikan File Statis (HTML, CSS, JS) ---
+// Memberi tahu Express untuk menyajikan file dari direktori root proyek.
+// path.resolve(__dirname, '..') akan menunjuk ke folder LUMENSIA-SMART-TECH
+// dari dalam folder /backend.
+app.use(express.static(path.resolve(__dirname, '..')));
+
+// --- Koneksi ke MongoDB ---
 const mongoUri = process.env.MONGO_URI;
-mongoose.connect(mongoUri)
-  .then(() => console.log("Berhasil terhubung ke MongoDB"))
-  .catch(err => console.error("Gagal terhubung ke MongoDB:", err));
 
-// Schema dan Model Produk (Sama seperti sebelumnya)
-const productSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  description: { type: String, required: true },
-  price: { type: Number, required: true },
-  category: { type: String, required: true },
-  imageUrl: { type: String },
-  stock: { type: Number, default: 1 },
-  tags: [String]
-}, { timestamps: true });
+if (mongoUri) {
+  mongoose.connect(mongoUri)
+    .then(() => console.log("Berhasil terhubung ke MongoDB."))
+    .catch(err => console.error("Gagal terhubung ke MongoDB:", err));
+} else {
+  console.warn("MONGO_URI tidak ditemukan. Server berjalan tanpa koneksi database.");
+}
 
-const Product = mongoose.model('Product', productSchema);
-
-// --- ROUTES ---
-// Rute utama untuk verifikasi
-app.get('/', (req, res) => {
-  res.send('Selamat datang di Backend API Lumensia! Server sudah berjalan dan terhubung ke DB.');
+// --- API Routes ---
+// Contoh endpoint API untuk memeriksa apakah server berjalan
+app.get('/api/status', (req, res) => {
+  res.status(200).json({ 
+      status: 'success', 
+      message: 'Server is running correctly.' 
+  });
 });
 
-// Rute untuk mendapatkan semua produk
-app.get('/api/products', async (req, res) => {
-  try {
-    const products = await Product.find();
-    res.status(200).json(products);
-  } catch (error) {
-    res.status(500).json({ message: 'Gagal mengambil data produk', error: error.message });
-  }
+// --- Menangani permintaan ke halaman lain (misal: privacy.html) ---
+// Route ini akan mengirimkan file privacy.html jika URL-nya adalah /privacy
+app.get('/privacy', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '..', 'privacy.html'));
 });
 
-// Rute untuk menambah produk baru
-app.post('/api/products', async (req, res) => {
-  try {
-    const newProduct = new Product(req.body);
-    const savedProduct = await newProduct.save();
-    res.status(201).json(savedProduct);
-  } catch (error) {
-    res.status(400).json({ message: 'Gagal menyimpan produk', error: error.message });
-  }
+// --- Fallback Route untuk Halaman Utama ---
+// Route ini akan mengirimkan index.html untuk semua permintaan GET lain
+// yang tidak cocok dengan route di atas (misalnya, halaman utama '/').
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '..', 'index.html'));
 });
 
-// --- PENTING: Ekspor aplikasi untuk Vercel ---
+
+// --- Ekspor Aplikasi untuk Vercel ---
+// Vercel akan menggunakan 'app' yang diekspor ini untuk menjalankan server.
 module.exports = app;
