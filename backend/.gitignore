@@ -1,0 +1,7 @@
+# ===== File: .gitignore =====
+
+# Abaikan folder dependensi
+node_modules
+
+# Abaikan file variabel lingkungan
+.env
