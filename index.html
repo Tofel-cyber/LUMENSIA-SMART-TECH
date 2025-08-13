@@ -5,38 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PT. Lumensia Smart Technologies</title>
 
-    <!-- ==================================================== -->
-    <!--      BAGIAN 1: MEMUAT PI NETWORK SDK (PENTING)      -->
-    <!-- ==================================================== -->
+    <!-- Memuat Pi Network SDK -->
     <script src="https://sdk.pi.network/v2/pi-sdk.js"></script>
-    <!-- ==================================================== -->
 
     <style>
-        /* Anda bisa meletakkan CSS di sini agar rapi */
         body {
-            font-family: sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f4f9;
+            min-height: 100vh;
+            margin: 20px;
+            background-color: #f0f2f5;
+            box-sizing: border-box;
         }
         .container {
             text-align: center;
-            padding: 20px;
-            border-radius: 8px;
+            padding: 25px;
+            border-radius: 12px;
             background-color: white;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1 );
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1 );
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #555;
+            line-height: 1.6;
         }
         .notice {
             background-color: #fffbe6;
             border: 1px solid #ffe58f;
-            padding: 10px 15px;
-            border-radius: 4px;
-            margin-top: 20px;
-            max-width: 400px;
+            padding: 12px 18px;
+            border-radius: 8px;
+            margin-top: 25px;
+            font-size: 14px;
         }
         button {
             background-color: #6a0dad; /* Warna ungu Pi */
@@ -44,13 +50,23 @@
             border: none;
             padding: 15px 30px;
             font-size: 16px;
+            font-weight: bold;
             border-radius: 8px;
             cursor: pointer;
             margin-top: 20px;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.2s;
         }
         button:hover {
             background-color: #530a8a;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #pesan-status {
+            color: #d93025; /* Warna merah untuk error */
+            margin-top: 20px;
+            font-weight: bold;
+            min-height: 20px; /* Memberi ruang agar layout tidak loncat */
         }
     </style>
 </head>
@@ -63,79 +79,72 @@
         <!-- Tombol Pembayaran -->
         <button onclick="bayarDenganPi()">Lakukan Pembayaran Uji Coba</button>
 
+        <!-- Elemen untuk menampilkan pesan status/error -->
+        <p id="pesan-status"></p>
+
         <div class="notice">
             <strong>Perhatian:</strong> Ini adalah transaksi uji coba untuk menyelesaikan checklist tahap 11 Pi Developer.
         </div>
     </div>
 
-
-    <!-- ==================================================== -->
-    <!-- BAGIAN 2: SCRIPT UNTUK MENJALANKAN PEMBAYARAN (PENTING) -->
-    <!-- ==================================================== -->
     <script>
         // Inisialisasi Pi SDK. 'sandbox: true' untuk mode uji coba.
         Pi.init({ version: "2.0", sandbox: true });
 
         // Fungsi ini akan dipanggil saat tombol di atas diklik
         async function bayarDenganPi() {
+            const pesanStatus = document.getElementById('pesan-status');
+            pesanStatus.textContent = 'Memulai proses pembayaran...'; // Memberi feedback ke pengguna
             console.log("Tombol pembayaran ditekan, memulai proses...");
+
             try {
-                // 1. Minta izin dari pengguna untuk melakukan pembayaran
                 const scopes = ['payments'];
                 const authResult = await Pi.authenticate(scopes, onIncompletePaymentFound);
                 console.log("Otentikasi berhasil:", authResult);
 
-                // 2. Siapkan detail pembayaran
                 const paymentData = {
-                    amount: 0.001, // Jumlah Test-Pi yang akan dikirim
-                    memo: "Uji coba pembayaran untuk Lumensia", // Pesan yang akan dilihat pengguna
-                    metadata: { orderId: "TEST-12345" } // Data untuk server Anda
+                    amount: 0.001,
+                    memo: "Uji coba pembayaran untuk Lumensia",
+                    metadata: { orderId: "TEST-12345" }
                 };
 
-                // 3. Siapkan 'callbacks' untuk menangani alur pembayaran
                 const callbacks = {
                     onReadyForServerAuth: function(paymentId) {
                         console.log("Siap untuk otorisasi server. Payment ID:", paymentId);
-                        // PENTING: Di aplikasi nyata, Anda harus mengirim 'paymentId' ini
-                        // ke server Anda (backend) untuk diautorisasi.
-                        // Contoh: fetch('/api/approve-payment', { ... });
+                        pesanStatus.textContent = 'Menunggu otorisasi server...';
                     },
                     onReadyForServerCompletion: function(paymentId, txid) {
                         console.log("Siap untuk penyelesaian server. Payment ID:", paymentId, "TXID:", txid);
-                        // PENTING: Di aplikasi nyata, Anda harus mengirim 'paymentId' dan 'txid'
-                        // ke server Anda untuk divalidasi dan menyelesaikan pesanan.
-                        // Contoh: fetch('/api/complete-payment', { ... });
+                        pesanStatus.textContent = 'Pembayaran berhasil diproses!';
+                        pesanStatus.style.color = 'green';
                     },
                     onCancel: function(paymentId) {
                         console.log("Pembayaran dibatalkan oleh pengguna. Payment ID:", paymentId);
-                        alert("Anda membatalkan pembayaran.");
+                        pesanStatus.textContent = 'Anda membatalkan pembayaran.';
+                        pesanStatus.style.color = '#d93025';
                     },
                     onError: function(error, payment) {
                         console.error("Terjadi kesalahan saat pembayaran:", error);
-                        alert("Terjadi kesalahan. Silakan coba lagi.");
+                        pesanStatus.textContent = 'Terjadi kesalahan. Silakan coba lagi.';
+                        pesanStatus.style.color = '#d93025';
                     }
                 };
 
-                // 4. Mulai proses pembayaran
                 console.log("Membuat pembayaran...");
-                const paymentResult = await Pi.createPayment(paymentData, callbacks);
-                console.log("Proses pembayaran dimulai:", paymentResult);
+                await Pi.createPayment(paymentData, callbacks);
 
             } catch (err) {
-                // Ini akan menangani kesalahan jika pengguna menolak otentikasi
                 console.error("Gagal melakukan otentikasi:", err);
-                alert("Anda harus menyetujui izin untuk melanjutkan pembayaran.");
+                pesanStatus.textContent = 'Gagal: Anda harus menyetujui izin untuk melanjutkan.';
+                pesanStatus.style.color = '#d93025';
             }
         }
 
-        // Fungsi ini adalah praktik terbaik, untuk menangani jika ada pembayaran yang belum selesai
         function onIncompletePaymentFound(payment) {
             console.log("Ditemukan pembayaran yang belum selesai:", payment);
-            // Di sini Anda bisa membuat logika untuk menyelesaikan pembayaran tersebut
-            return;
+            return; // Untuk sekarang, kita abaikan saja
         };
     </script>
-    <!-- ==================================================== -->
 
 </body>
 </html>
