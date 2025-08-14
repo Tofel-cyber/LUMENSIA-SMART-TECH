@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PT. Lumensia Smart Technologies</title>
 
-    <!-- Memuat Pi Network SDK -->
+    <!-- Pi Network SDK -->
     <script src="https://sdk.pi.network/v2/pi-sdk.js"></script>
 
     <style>
@@ -25,7 +25,7 @@
             padding: 25px;
             border-radius: 12px;
             background-color: white;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.1 );
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
             max-width: 500px;
             width: 100%;
         }
@@ -45,7 +45,7 @@
             font-size: 14px;
         }
         button {
-            background-color: #6a0dad; /* Warna ungu Pi */
+            background-color: #6a0dad;
             color: white;
             border: none;
             padding: 15px 30px;
@@ -63,10 +63,10 @@
             transform: scale(0.98);
         }
         #pesan-status {
-            color: #d93025; /* Warna merah untuk error */
+            color: #d93025;
             margin-top: 20px;
             font-weight: bold;
-            min-height: 20px; /* Memberi ruang agar layout tidak loncat */
+            min-height: 20px;
         }
     </style>
 </head>
@@ -76,10 +76,7 @@
         <h1>PT. Lumensia Smart Technologies</h1>
         <p>Kami menghadirkan layanan Smart Home dan Konstruksi Digital berbasis Pi Network.</p>
 
-        <!-- Tombol Pembayaran -->
-        <button onclick="bayarDenganPi()">Lakukan Pembayaran Uji Coba</button>
-
-        <!-- Elemen untuk menampilkan pesan status/error -->
+        <button onclick="bayarDenganPi()">💰 Lakukan Pembayaran Uji Coba</button>
         <p id="pesan-status"></p>
 
         <div class="notice">
@@ -88,14 +85,12 @@
     </div>
 
     <script>
-        // Inisialisasi Pi SDK. 'sandbox: true' untuk mode uji coba.
         Pi.init({ version: "2.0", sandbox: true });
 
-        // Fungsi ini akan dipanggil saat tombol di atas diklik
         async function bayarDenganPi() {
             const pesanStatus = document.getElementById('pesan-status');
-            pesanStatus.textContent = 'Memulai proses pembayaran...'; // Memberi feedback ke pengguna
-            console.log("Tombol pembayaran ditekan, memulai proses...");
+            pesanStatus.textContent = 'Memulai proses pembayaran...';
+            pesanStatus.style.color = '#555';
 
             try {
                 const scopes = ['payments'];
@@ -103,47 +98,45 @@
                 console.log("Otentikasi berhasil:", authResult);
 
                 const paymentData = {
-                    amount: 0.001,
+                    amount: 1, // Lebih aman untuk test
                     memo: "Uji coba pembayaran untuk Lumensia",
                     metadata: { orderId: "TEST-12345" }
                 };
 
                 const callbacks = {
-                    onReadyForServerAuth: function(paymentId) {
-                        console.log("Siap untuk otorisasi server. Payment ID:", paymentId);
+                    onReadyForServerApproval(paymentId) {
+                        console.log("Siap untuk otorisasi server:", paymentId);
                         pesanStatus.textContent = 'Menunggu otorisasi server...';
                     },
-                    onReadyForServerCompletion: function(paymentId, txid) {
-                        console.log("Siap untuk penyelesaian server. Payment ID:", paymentId, "TXID:", txid);
-                        pesanStatus.textContent = 'Pembayaran berhasil diproses!';
+                    onReadyForServerCompletion(paymentId, txid) {
+                        console.log("Pembayaran berhasil:", paymentId, txid);
+                        pesanStatus.textContent = '✅ Pembayaran berhasil!';
                         pesanStatus.style.color = 'green';
                     },
-                    onCancel: function(paymentId) {
-                        console.log("Pembayaran dibatalkan oleh pengguna. Payment ID:", paymentId);
-                        pesanStatus.textContent = 'Anda membatalkan pembayaran.';
+                    onCancel(paymentId) {
+                        console.log("Pembayaran dibatalkan:", paymentId);
+                        pesanStatus.textContent = '❌ Pembayaran dibatalkan.';
                         pesanStatus.style.color = '#d93025';
                     },
-                    onError: function(error, payment) {
-                        console.error("Terjadi kesalahan saat pembayaran:", error);
-                        pesanStatus.textContent = 'Terjadi kesalahan. Silakan coba lagi.';
+                    onError(error, payment) {
+                        console.error("Error pembayaran:", error, payment);
+                        pesanStatus.textContent = '❌ Terjadi kesalahan: ' + error;
                         pesanStatus.style.color = '#d93025';
                     }
                 };
 
-                console.log("Membuat pembayaran...");
-                await Pi.createPayment(paymentData, callbacks);
+                Pi.createPayment(paymentData, callbacks);
 
             } catch (err) {
-                console.error("Gagal melakukan otentikasi:", err);
-                pesanStatus.textContent = 'Gagal: Anda harus menyetujui izin untuk melanjutkan.';
+                console.error("Gagal otentikasi:", err);
+                pesanStatus.textContent = '❌ Anda harus menyetujui izin pembayaran.';
                 pesanStatus.style.color = '#d93025';
             }
         }
 
         function onIncompletePaymentFound(payment) {
-            console.log("Ditemukan pembayaran yang belum selesai:", payment);
-            return; // Untuk sekarang, kita abaikan saja
-        };
+            console.log("Pembayaran belum selesai ditemukan:", payment);
+        }
     </script>
 
 </body>
