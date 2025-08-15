@@ -1,4 +1,4 @@
-<!-- ===== File: frontend/index.html (VERSI AWAL YANG STABIL) ===== -->
+<!-- ===== File: frontend/index.html (VERSI FIX - UJI COBA FRONTEND) ===== -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -7,38 +7,76 @@
     <title>PT. Lumensia Smart Technologies</title>
     <script src="https://sdk.pi.network/v2/pi-sdk.js"></script>
     <style>
-        body { font-family: system-ui, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 20px; background-color: #f0f2f5; }
-        .container { text-align: center; padding: 25px; border-radius: 12px; background-color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1 ); max-width: 500px; width: 100%; }
-        button { background-color: #6a0dad; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 8px; cursor: pointer; margin-top: 20px; }
-        #pesan-status { margin-top: 20px; font-weight: bold; min-height: 20px; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; margin: 20px; background-color: #f0f2f5; box-sizing: border-box;
+        }
+        .container {
+            text-align: center; padding: 25px; border-radius: 12px; background-color: white;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1 ); max-width: 500px; width: 100%;
+        }
+        h1 { color: #333; }
+        p { color: #555; line-height: 1.6; }
+        .notice {
+            background-color: #fffbe6; border: 1px solid #ffe58f; padding: 12px 18px;
+            border-radius: 8px; margin-top: 25px; font-size: 14px;
+        }
+        button {
+            background-color: #6a0dad; color: white; border: none;
+            padding: 15px 30px; font-size: 16px; font-weight: bold; border-radius: 8px;
+            cursor: pointer; margin-top: 20px; transition: background-color 0.3s, transform 0.2s;
+        }
+        button:hover { background-color: #530a8a; }
+        button:active { transform: scale(0.98); }
+        #pesan-status {
+            margin-top: 20px; font-weight: bold; min-height: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>PT. Lumensia Smart Technologies</h1>
-        <p>Silakan lakukan pembayaran uji coba untuk melanjutkan.</p>
+        <p>Kami menghadirkan layanan Smart Home dan Konstruksi Digital berbasis Pi Network.</p>
         <button onclick="bayarDenganPi()">💰 Lakukan Pembayaran Uji Coba</button>
         <p id="pesan-status"></p>
+        <div class="notice">
+            <strong>Perhatian:</strong> Ini adalah transaksi uji coba untuk menyelesaikan checklist tahap 11 Pi Developer.
+            Gunakan Pi Browser untuk membuka halaman ini.
+        </div>
     </div>
 
     <script>
+        // Inisialisasi Pi SDK
         Pi.init({ version: "2.0", sandbox: true });
 
         async function bayarDenganPi() {
             const pesanStatus = document.getElementById('pesan-status');
-            pesanStatus.textContent = 'Memulai proses...';
+            pesanStatus.textContent = '🔄 Memulai proses pembayaran...';
             pesanStatus.style.color = '#555';
 
+            // Cek apakah diakses dari Pi Browser
+            if (!navigator.userAgent.toLowerCase().includes("pi browser")) {
+                pesanStatus.textContent = '❌ Harap buka halaman ini melalui Pi Browser.';
+                pesanStatus.style.color = '#d93025';
+                return;
+            }
+
             try {
-                // Hanya minta izin, tidak melakukan apa-apa lagi
-                await Pi.authenticate(['payments']);
-                pesanStatus.textContent = 'Otentikasi berhasil (tes frontend).';
+                const scopes = ['payments'];
+                await Pi.authenticate(scopes, onIncompletePaymentFound);
+                pesanStatus.textContent = '✅ Otentikasi berhasil! (Ini hanya tes frontend)';
                 pesanStatus.style.color = 'green';
             } catch (err) {
-                pesanStatus.textContent = '❌ Gagal. Anda harus menyetujui izin.';
+                console.error("Gagal otentikasi:", err);
+                pesanStatus.textContent = '❌ Anda harus menyetujui izin pembayaran.';
                 pesanStatus.style.color = '#d93025';
-                console.error(err);
             }
+        }
+
+        // Callback jika ada pembayaran yang belum selesai
+        function onIncompletePaymentFound(payment) {
+            console.warn("Pembayaran belum selesai ditemukan:", payment);
         }
     </script>
 </body>

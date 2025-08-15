@@ -1,17 +1,48 @@
-// ===== File: backend/server.js (VERSI AWAL YANG PALING STABIL) =====
+// ===== File: backend/server.js (VERSI FIX UNTUK LOKAL & VERCEL) =====
 const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
 const path = require('path');
+require('dotenv').config();
 
 const app = express();
 
-// Sajikan semua file dari folder 'frontend'
-const frontendPath = path.join(__dirname, '..', 'frontend');
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// --- KONEKSI DATABASE ---
+const MONGO_URI = process.env.MONGO_URI;
+mongoose.connect(MONGO_URI)
+    .then(() => console.log("SUCCESS: Berhasil terhubung ke MongoDB."))
+    .catch(err => console.error("ERROR: Gagal terhubung ke MongoDB:", err));
+
+// --- PENYAJIAN FILE STATIS (FRONTEND) ---
+// Pastikan folder 'client/dist' sudah ada (hasil build React/Vite)
+const frontendPath = path.join(__dirname, '..', 'client', 'dist');
 app.use(express.static(frontendPath));
 
-// Jika ada permintaan yang tidak cocok, kirim index.html
+// --- ROUTE validation-key.txt ---
+// File ini harus ada di 'client/dist' atau 'client/public' sebelum build
+app.get('/validation-key.txt', (req, res) => {
+    res.sendFile(path.join(frontendPath, 'validation-key.txt'));
+});
+
+// --- API ROUTES ---
+// Tambahkan route API kamu di sini, misal:
+// app.use('/api/products', require('./routes/products'));
+
+// --- FALLBACK ROUTE UNTUK SPA ---
+// Semua permintaan selain API dan file statis diarahkan ke index.html
 app.get('*', (req, res) => {
     res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
-// Ekspor aplikasi untuk Vercel
+// Ekspor app untuk Vercel
 module.exports = app;
+
+// Jalankan lokal jika tidak di Vercel
+if (require.main === module) {
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => console.log(`Server berjalan di port ${PORT}`));
+}
