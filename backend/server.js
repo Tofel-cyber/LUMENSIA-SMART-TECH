@@ -19,7 +19,7 @@ mongoose.connect(MONGO_URI)
 
 // --- PENYAJIAN FILE STATIS (FRONTEND) ---
 // Pastikan folder 'client/dist' sudah ada (hasil build React/Vite)
-const frontendPath = path.join(__dirname, '..', 'frontend');
+const frontendPath = path.join(__dirname, '..', 'client', 'dist');
 app.use(express.static(frontendPath));
 
 // --- ROUTE validation-key.txt ---
