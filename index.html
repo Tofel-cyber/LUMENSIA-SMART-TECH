@@ -14,7 +14,7 @@
         }
         .container {
             text-align: center; padding: 25px; border-radius: 12px; background-color: white;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.1 ); max-width: 500px; width: 100%;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1  ); max-width: 500px; width: 100%;
         }
         h1 { color: #333; }
         p { color: #555; line-height: 1.6; }
@@ -55,21 +55,28 @@
             pesanStatus.textContent = '🔄 Memulai proses pembayaran...';
             pesanStatus.style.color = '#555';
 
-            // Cek apakah diakses dari Pi Browser
-            if (!navigator.userAgent.toLowerCase().includes("pi browser")) {
-                pesanStatus.textContent = '❌ Harap buka halaman ini melalui Pi Browser.';
-                pesanStatus.style.color = '#d93025';
-                return;
-            }
+            // [PERBAIKAN] Pemeriksaan userAgent dihapus karena tidak andal.
+            // Kita langsung mencoba autentikasi. Jika gagal, berarti ada masalah
+            // (bisa karena tidak di Pi Browser atau pengguna menolak izin).
 
             try {
                 const scopes = ['payments'];
+                // Mencoba autentikasi adalah cara terbaik untuk memvalidasi lingkungan Pi Browser.
                 await Pi.authenticate(scopes, onIncompletePaymentFound);
-                pesanStatus.textContent = '✅ Otentikasi berhasil! (Ini hanya tes frontend)';
+                
+                // Jika sampai di sini, berarti autentikasi berhasil.
+                pesanStatus.textContent = '✅ Otentikasi berhasil! Silakan lanjutkan ke pembayaran.';
                 pesanStatus.style.color = 'green';
+
+                // Di sini Anda akan melanjutkan dengan memanggil Pi.createPayment(...)
+                // Untuk sekarang, pesan sukses ini sudah cukup.
+
             } catch (err) {
-                console.error("Gagal otentikasi:", err);
-                pesanStatus.textContent = '❌ Anda harus menyetujui izin pembayaran.';
+                // Tangkapan error ini akan menangani semua kasus:
+                // 1. Tidak berada di Pi Browser (Pi.authenticate akan gagal).
+                // 2. Pengguna menekan "Cancel" atau menolak izin.
+                console.error("Gagal otentikasi atau tidak di Pi Browser:", err);
+                pesanStatus.textContent = '❌ Gagal. Pastikan Anda di Pi Browser dan menyetujui izin.';
                 pesanStatus.style.color = '#d93025';
             }
         }
@@ -77,6 +84,7 @@
         // Callback jika ada pembayaran yang belum selesai
         function onIncompletePaymentFound(payment) {
             console.warn("Pembayaran belum selesai ditemukan:", payment);
+            // Anda bisa menambahkan logika untuk menangani ini nanti.
         }
     </script>
 </body>
