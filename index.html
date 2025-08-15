@@ -1,4 +1,4 @@
-<!-- ===== File: frontend/index.html (Versi dengan Panggilan Backend) ===== -->
+<!-- ===== File: frontend/index.html (VERSI AMAN - TANPA PANGGILAN BACKEND) ===== -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -7,7 +7,6 @@
     <title>PT. Lumensia Smart Technologies</title>
     <script src="https://sdk.pi.network/v2/pi-sdk.js"></script>
     <style>
-        /* Gaya CSS Anda tetap sama, tidak perlu diubah */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 20px; background-color: #f0f2f5; box-sizing: border-box; }
         .container { text-align: center; padding: 25px; border-radius: 12px; background-color: white; box-shadow: 0 6px 12px rgba(0,0,0,0.1 ); max-width: 500px; width: 100%; }
         h1 { color: #333; }
@@ -40,65 +39,14 @@
 
             try {
                 const scopes = ['payments'];
-                const authResult = await Pi.authenticate(scopes, onIncompletePaymentFound);
-                
-                const paymentData = {
-                    amount: 0.001, // Gunakan jumlah kecil untuk tes
-                    memo: "Uji coba pembayaran untuk Lumensia V2",
-                    metadata: { orderId: "TEST-V2-001" }
-                };
-
-                const callbacks = {
-                    onReadyForServerApproval: async function(paymentId) {
-                        pesanStatus.textContent = 'Menghubungi server untuk persetujuan...';
-                        try {
-                            const response = await fetch('/api/approve-payment', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ paymentId: paymentId })
-                            });
-
-                            if (!response.ok) {
-                                const errorData = await response.json();
-                                throw new Error(errorData.message || 'Gagal mendapatkan persetujuan dari server.');
-                            }
-                            // Jika berhasil, SDK akan otomatis lanjut ke onReadyForServerCompletion
-                            pesanStatus.textContent = 'Persetujuan server berhasil. Menunggu penyelesaian...';
-                        } catch (err) {
-                            console.error("Error saat approve:", err);
-                            pesanStatus.textContent = '❌ Error: ' + err.message;
-                            pesanStatus.style.color = '#d93025';
-                            // Anda bisa membatalkan pembayaran di sini jika perlu
-                            // Pi.cancelPayment(paymentId);
-                        }
-                    },
-                    onReadyForServerCompletion: function(paymentId, txid) {
-                        pesanStatus.textContent = `✅ Pembayaran Selesai! TXID: ${txid.substring(0, 10)}...`;
-                        pesanStatus.style.color = 'green';
-                    },
-                    onCancel: function(paymentId) {
-                        pesanStatus.textContent = '❌ Pembayaran dibatalkan oleh pengguna.';
-                        pesanStatus.style.color = '#d93025';
-                    },
-                    onError: function(error, payment) {
-                        pesanStatus.textContent = '❌ Terjadi kesalahan SDK: ' + error.code;
-                        pesanStatus.style.color = '#d93025';
-                        console.error("Error SDK:", error);
-                    }
-                };
-
-                Pi.createPayment(paymentData, callbacks);
-
+                await Pi.authenticate(scopes);
+                pesanStatus.textContent = 'Otentikasi berhasil! (Ini adalah tes frontend saja)';
+                pesanStatus.style.color = 'green';
             } catch (err) {
                 console.error("Gagal otentikasi:", err);
                 pesanStatus.textContent = '❌ Anda harus menyetujui izin pembayaran.';
                 pesanStatus.style.color = '#d93025';
             }
-        }
-
-        function onIncompletePaymentFound(payment) {
-            console.log("Pembayaran belum selesai ditemukan:", payment);
-            // Anda bisa mencoba menyelesaikan pembayaran ini di sini jika perlu
         }
     </script>
 </body>
