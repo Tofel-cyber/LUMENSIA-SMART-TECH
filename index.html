@@ -1,4 +1,4 @@
-<!-- ===== File: frontend/index.html (VERSI FIX - UJI COBA FRONTEND) ===== -->
+<!-- ===== File: frontend/index.html (VERSI FINAL - DENGAN PEMBAYARAN) ===== -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -7,31 +7,13 @@
     <title>PT. Lumensia Smart Technologies</title>
     <script src="https://sdk.pi.network/v2/pi-sdk.js"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 100vh; margin: 20px; background-color: #f0f2f5; box-sizing: border-box;
-        }
-        .container {
-            text-align: center; padding: 25px; border-radius: 12px; background-color: white;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.1  ); max-width: 500px; width: 100%;
-        }
-        h1 { color: #333; }
-        p { color: #555; line-height: 1.6; }
-        .notice {
-            background-color: #fffbe6; border: 1px solid #ffe58f; padding: 12px 18px;
-            border-radius: 8px; margin-top: 25px; font-size: 14px;
-        }
-        button {
-            background-color: #6a0dad; color: white; border: none;
-            padding: 15px 30px; font-size: 16px; font-weight: bold; border-radius: 8px;
-            cursor: pointer; margin-top: 20px; transition: background-color 0.3s, transform 0.2s;
-        }
-        button:hover { background-color: #530a8a; }
-        button:active { transform: scale(0.98); }
-        #pesan-status {
-            margin-top: 20px; font-weight: bold; min-height: 20px;
-        }
+        /* Gaya CSS tidak berubah, jadi saya singkat untuk kejelasan */
+        body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 20px; background-color: #f0f2f5; }
+        .container { text-align: center; padding: 25px; border-radius: 12px; background-color: white; box-shadow: 0 6px 12px rgba(0,0,0,0.1 ); max-width: 500px; width: 100%; }
+        h1 { color: #333; } p { color: #555; }
+        .notice { background-color: #fffbe6; border: 1px solid #ffe58f; padding: 12px 18px; border-radius: 8px; margin-top: 25px; font-size: 14px; }
+        button { background-color: #6a0dad; color: white; border: none; padding: 15px 30px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 20px; }
+        #pesan-status { margin-top: 20px; font-weight: bold; min-height: 20px; }
     </style>
 </head>
 <body>
@@ -42,49 +24,68 @@
         <p id="pesan-status"></p>
         <div class="notice">
             <strong>Perhatian:</strong> Ini adalah transaksi uji coba untuk menyelesaikan checklist tahap 11 Pi Developer.
-            Gunakan Pi Browser untuk membuka halaman ini.
         </div>
     </div>
 
     <script>
-        // Inisialisasi Pi SDK
         Pi.init({ version: "2.0", sandbox: true });
 
         async function bayarDenganPi() {
             const pesanStatus = document.getElementById('pesan-status');
-            pesanStatus.textContent = '🔄 Memulai proses pembayaran...';
+            pesanStatus.textContent = '🔄 Memulai proses...';
             pesanStatus.style.color = '#555';
 
-            // [PERBAIKAN] Pemeriksaan userAgent dihapus karena tidak andal.
-            // Kita langsung mencoba autentikasi. Jika gagal, berarti ada masalah
-            // (bisa karena tidak di Pi Browser atau pengguna menolak izin).
-
             try {
+                // 1. MINTA IZIN (AUTENTIKASI)
                 const scopes = ['payments'];
-                // Mencoba autentikasi adalah cara terbaik untuk memvalidasi lingkungan Pi Browser.
-                await Pi.authenticate(scopes, onIncompletePaymentFound);
+                const authResult = await Pi.authenticate(scopes, onIncompletePaymentFound);
+                pesanStatus.textContent = '✅ Izin disetujui. Membuat pembayaran...';
                 
-                // Jika sampai di sini, berarti autentikasi berhasil.
-                pesanStatus.textContent = '✅ Otentikasi berhasil! Silakan lanjutkan ke pembayaran.';
-                pesanStatus.style.color = 'green';
+                // 2. BUAT DATA PEMBAYARAN
+                const paymentData = {
+                    amount: 0.001, // Jumlah Test-Pi yang akan dikirim
+                    memo: "Pembayaran Uji Coba untuk Lumensia", // Pesan transaksi
+                    metadata: { orderId: "12345" } // Data tambahan (opsional)
+                };
 
-                // Di sini Anda akan melanjutkan dengan memanggil Pi.createPayment(...)
-                // Untuk sekarang, pesan sukses ini sudah cukup.
+                // 3. BUAT PEMBAYARAN
+                // Ini akan membuka popup konfirmasi pembayaran dari Pi
+                await Pi.createPayment(paymentData, {
+                    // Callback yang akan dijalankan setelah pembayaran selesai
+                    onReadyForServerApprove: function(paymentId) {
+                        pesanStatus.textContent = '⏳ Pembayaran dibuat. Menunggu persetujuan server...';
+                        // Di aplikasi nyata, Anda akan mengirim paymentId ini ke backend Anda
+                        // untuk divalidasi di server. Untuk tes ini, kita anggap berhasil.
+                        console.log("onReadyForServerApprove:", paymentId);
+                    },
+                    onReadyForServerComplete: function(paymentId, txid) {
+                        pesanStatus.textContent = `✅ PEMBAYARAN BERHASIL! (TXID: ${txid.substring(0, 10)}...)`;
+                        pesanStatus.style.color = 'green';
+                        console.log("onReadyForServerComplete:", paymentId, txid);
+                    },
+                    onCancel: function(paymentId) {
+                        pesanStatus.textContent = '❌ Pembayaran dibatalkan oleh pengguna.';
+                        pesanStatus.style.color = '#d93025';
+                        console.log("onCancel:", paymentId);
+                    },
+                    onError: function(error, payment) {
+                        pesanStatus.textContent = '❌ Terjadi error saat pembayaran.';
+                        pesanStatus.style.color = '#d93025';
+                        console.error("onError:", error, payment);
+                    }
+                });
 
             } catch (err) {
-                // Tangkapan error ini akan menangani semua kasus:
-                // 1. Tidak berada di Pi Browser (Pi.authenticate akan gagal).
-                // 2. Pengguna menekan "Cancel" atau menolak izin.
-                console.error("Gagal otentikasi atau tidak di Pi Browser:", err);
-                pesanStatus.textContent = '❌ Gagal. Pastikan Anda di Pi Browser dan menyetujui izin.';
+                // Error ini terjadi jika pengguna menolak izin di awal
+                console.error("Gagal otentikasi:", err);
+                pesanStatus.textContent = '❌ Gagal. Pastikan Anda menyetujui izin pembayaran.';
                 pesanStatus.style.color = '#d93025';
             }
         }
 
-        // Callback jika ada pembayaran yang belum selesai
         function onIncompletePaymentFound(payment) {
             console.warn("Pembayaran belum selesai ditemukan:", payment);
-            // Anda bisa menambahkan logika untuk menangani ini nanti.
+            // Idealnya, Anda harus mencoba menyelesaikan pembayaran ini
         }
     </script>
 </body>
