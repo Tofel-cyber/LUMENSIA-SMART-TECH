@@ -18,12 +18,12 @@ mongoose.connect(MONGO_URI)
     .catch(err => console.error("ERROR: Gagal terhubung ke MongoDB:", err));
 
 // --- PENYAJIAN FILE STATIS (FRONTEND) ---
-// Pastikan folder 'client/dist' sudah ada (hasil build React/Vite)
-const frontendPath = path.join(__dirname, '..', 'client', 'dist');
+// [PERBAIKAN] Mengarahkan path ke direktori root proyek, bukan ke 'client/dist'
+const frontendPath = path.join(__dirname, '..'); 
 app.use(express.static(frontendPath));
 
 // --- ROUTE validation-key.txt ---
-// File ini harus ada di 'client/dist' atau 'client/public' sebelum build
+// File ini harus ada di direktori root proyek
 app.get('/validation-key.txt', (req, res) => {
     res.sendFile(path.join(frontendPath, 'validation-key.txt'));
 });
